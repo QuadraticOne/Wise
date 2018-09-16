@@ -15,7 +15,7 @@ class Activation:
 
     SIGMOID = tf.nn.sigmoid
     RELU = tf.nn.relu
-    LEAKY_RELU = tf.nn.leaky_relu
+    LEAKY_RELU = lambda t, s: tf.nn.leaky_relu(t, name=s)
     TANH = tf.nn.tanh
     
     DEFAULT = tf.nn.sigmoid
