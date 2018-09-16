@@ -37,11 +37,11 @@ class Network:
         """
         raise NotImplementedError()
 
-    def feed(self, outputs, feed_dict):
+    def feed(self, outputs, feed_dict={}):
         """
-        [Tensor] -> Dict Tensor Array -> [Array]
+        [Tensor] -> (Dict Tensor Array)? -> [Array]
         """
-        return self.session.feed(outputs, feed_dict=feed_dict)
+        return self.session.run(outputs, feed_dict=feed_dict)
 
     def save(self):
         """
@@ -49,7 +49,7 @@ class Network:
         Save the values of the network's variables to its save location.
         """
         self._check_save_location()
-        io = IO(self.save_location)
+        io = IO(self.save_location, create_if_missing=True)
         io.save_session(self.session, 'parameters', variables=self.get_variables())
 
     def restore(self):
@@ -58,7 +58,7 @@ class Network:
         Restore the values of the network's variables from its save location.
         """
         self._check_save_location()
-        io = IO(self.save_location)
+        io = IO(self.save_location, create_if_missing=True)
         io.restore_session(self.session, 'parameters', variables=self.get_variables())
 
     def initialise_variables(self):
@@ -66,16 +66,7 @@ class Network:
         () -> ()
         Initialise the network's variables.
         """
-        for variable in self.get_variables():
-            self.feed(tf.variables_initializer())
-
-    def initialise_and_restore(self):
-        """
-        () -> ()
-        Initialise the network's variables then restore them.
-        """
-        self.initialise_variables()
-        self.restore()
+        self.feed(tf.variables_initializer(self.get_variables()))
                 
     def _check_save_location(self):
         """

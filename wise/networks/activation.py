@@ -1,6 +1,13 @@
 import tensorflow as tf
 
 
+def identity(x, _):
+    """
+    Object -> String -> Object
+    """
+    return x
+
+
 class Activation:
     """
     Various constants for easy use of activation functions.
@@ -13,10 +20,3 @@ class Activation:
     
     DEFAULT = tf.nn.sigmoid
     IDENTITY = identity
-
-
-def identity(x):
-    """
-    Object -> Object
-    """
-    return x
