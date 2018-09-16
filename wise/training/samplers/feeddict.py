@@ -32,7 +32,7 @@ class FeedDictSampler:
         }
 
     @staticmethod
-    def from_indices(self, sampler, keys):
+    def from_indices(sampler, keys):
         """
         Sampler a -> [Tensor] -> FeedDictSampler b
         Take a sampler, which outputs a list or tuple of values, and return a
@@ -40,5 +40,6 @@ class FeedDictSampler:
         ith tensor in the provided list.
         """
         return FeedDictSampler(sampler, {
+            # TODO: find a way to "save" the integer indices properly
             index_key[1]: lambda t: t[index_key[0]] for index_key in enumerate(keys)
         })

@@ -1,4 +1,4 @@
-from wise.training.samplers.sampler import sampler
+from wise.training.samplers.sampler import Sampler
 
 
 class AnonymousSampler(Sampler):
