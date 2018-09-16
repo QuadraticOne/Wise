@@ -22,7 +22,7 @@ class Network:
         """
         () -> tf.Session
         """
-        return self.session()
+        return self.session
 
     def extend_name(self, extension):
         """
