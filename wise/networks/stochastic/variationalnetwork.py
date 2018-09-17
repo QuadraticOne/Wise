@@ -30,6 +30,9 @@ class VariationalNetwork(Network):
         self.input_node = input_node
         self.internal_network = None
         self.output_layer = None
+        self.means_output_node = None
+        self.stddevs_output_node = None
+        self.sample_node = None
 
         self._initialise()
 
@@ -59,6 +62,10 @@ class VariationalNetwork(Network):
             stddevs_activation=self.stddevs_activation,
             input_node=self.internal_network.output_node
         )
+
+        self.means_output_node = self.output_layer.means_output_node
+        self.stddevs_output_node = self.output_layer.stddevs_output_node
+        self.sample_node = self.output_layer.sample_node
 
     def get_variables(self):
         """
