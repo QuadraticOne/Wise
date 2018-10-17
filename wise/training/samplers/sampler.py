@@ -8,14 +8,14 @@ class Sampler:
     
     def single(self):
         """
-        () -> T
+        () -> a
         Return a single sample from the sampler.
         """
         return self.batch(1)
 
     def batch(self, n):
         """
-        Int -> [T]
+        Int -> [a]
         Return a batch of size n from the sampler.
         """
         return [self.single() for _ in range(n)]
