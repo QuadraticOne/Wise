@@ -4,7 +4,7 @@ from wise.util.tensors import glorot_initialised_vars
 import tensorflow as tf
 
 
-class FeedforwardLayer(Network):
+class FeedforwardLayer(Layer):
     """
     A basic feedforward layer as part of a neural network.
     """
@@ -39,7 +39,8 @@ class FeedforwardLayer(Network):
         self.biases = glorot_initialised_vars(self.extend_name('biases'), self.output_shape)
         self.after_biases = tf.add(self.after_weights, self.biases,
             name=self.extend_name('after_biases'))
-        self.output_node = self.activation(self.after_biases, self.extend_name('output_node'))
+        self.output_node = self.activation(self.after_biases,
+            self.extend_name('output_node'))
 
     def get_variables(self):
         """
