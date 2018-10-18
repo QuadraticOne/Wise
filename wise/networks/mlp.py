@@ -28,6 +28,7 @@ class MLP(Network):
         self.input_node = input_node
         self.layers = None
         self.output_node = None
+        self.output_shape = None
 
         self._initialise()
 
@@ -53,6 +54,7 @@ class MLP(Network):
                 self.get_session(), in_shape, out_shape, previous_layer_output))
             previous_layer_output = self.layers[-1].get_output_node()
         self.output_node = previous_layer_output
+        self.output_shape = self.layer_shapes[-1]
 
     def get_input_node(self):
         """
