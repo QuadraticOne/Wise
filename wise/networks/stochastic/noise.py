@@ -86,4 +86,3 @@ class ElementwiseGaussianNoiseLayer(NoiseLayer):
         noise = tf.random_normal(self.input_shape, name=self.extend_name('noise'))
         return tf.add(input_node, tf.multiply(stddevs, noise),
             name=self.extend_name('output_node')), [stddevs]
-
