@@ -1,11 +1,11 @@
-from wise.networks.network import Network
+from wise.networks.layer import Layer
 from wise.networks.activation import Activation
 from wise.networks.deterministic.feedforwardlayer import FeedforwardLayer
 from wise.util.tensors import placeholder_node
 import tensorflow as tf
 
 
-class VariationalLayer(Network):
+class VariationalLayer(Layer):
     """
     A variational layer, whose output is a tensor of Gaussian distributions
     from which samples can be drawn.
@@ -19,19 +19,16 @@ class VariationalLayer(Network):
             -> (tf.Tensor -> String -> tf.Tensor)? -> tf.Tensor?
             -> String? -> VariationalLayer
         """
-        super().__init__(name, session, save_location)
+        super().__init__(name, session, input_shape,
+            output_shape, input_node, save_location)
 
-        self.input_shape = input_shape
-        self.output_shape = output_shape
         self.means_activation = means_activation
         self.stddevs_activation = stddevs_activation
 
-        self.input_node = input_node
         self.means_layer = None
         self.stddevs_layer = None
         self.means_output_node = None
         self.stddevs_output_node = None
-        self.sample_node = None
 
         self._initialise()
 
@@ -39,10 +36,6 @@ class VariationalLayer(Network):
         """
         () -> ()
         """
-        if self.input_node is None:
-            self.input_node = placeholder_node(self.extend_name('input_node'),
-                self.input_shape, dynamic_dimensions=1)
-
         self.means_layer = FeedforwardLayer(
             name=self.extend_name('means_layer'),
             session=self.get_session(),
@@ -63,9 +56,9 @@ class VariationalLayer(Network):
         )
         self.stddevs_output_node = self.stddevs_layer.output_node
 
-        self.sample_node = tf.add(tf.multiply(tf.random_normal(self.output_shape),
+        self.output_node = tf.add(tf.multiply(tf.random_normal(self.output_shape),
             self.stddevs_output_node), self.means_output_node,
-            name=self.extend_name('sample_node'))
+            name=self.extend_name('output_node'))
 
     def get_variables(self):
         """
