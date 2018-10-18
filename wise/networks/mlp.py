@@ -43,7 +43,7 @@ class MLP(Network):
 
         full_layers = [self.input_shape] + self.layer_shapes
         layer_params = zip(full_layers[:-1], full_layers[1:])
-        constructors = self.layer_constructors_generator(len(self.layer_shapes) + 1)
+        constructors = self.layer_constructors_generator(len(self.layer_shapes))
         
         self.layers = []
         previous_layer_output = self.get_input_node()
