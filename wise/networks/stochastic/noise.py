@@ -1,4 +1,5 @@
 from wise.networks.layer import Layer
+from wise.util.tensors import glorot_initialised_vars
 import tensorflow as tf
 
 
@@ -59,3 +60,30 @@ class GaussianNoiseLayer(NoiseLayer):
             tf.random_normal(self.input_shape, stddev=self.noise_stddev,
                 name=self.extend_name('gaussian_noise')),
             name=self.extend_name('output_node')), []
+
+
+class ElementwiseGaussianNoiseLayer(NoiseLayer):
+    """
+    Adds IDD Gaussian noise to the elements of a tensor, where the
+    standard deviation of the generated noise is given by an independent
+    variable tensor, and the mean of the Gaussian noise is zero.
+    """
+
+    def __init__(self, name, session, input_shape, input_node=None,
+            save_location=None):
+        """
+        String -> tf.Session -> [Int] -> tf.Tensor? -> String?
+            -> ElementwiseGaussianNoiseLayer
+        """
+        super().__init__(name, session, input_shape, input_node, save_location)
+
+    def noise_function(self, input_node):
+        """
+        tf.Tensor -> (tf.Tensor, [tf.Variable])
+        """
+        stddevs = glorot_initialised_vars(self.extend_name('standard_deviations'),
+            self.input_shape)
+        noise = tf.random_normal(self.input_shape, name=self.extend_name('noise'))
+        return tf.add(input_node, tf.multiply(stddevs, noise),
+            name=self.extend_name('output_node')), [stddevs]
+
