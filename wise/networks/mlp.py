@@ -1,4 +1,5 @@
 from wise.networks.network import Network
+from wise.util.tensors import placeholder_node
 
 
 class MLP(Network):
@@ -21,7 +22,6 @@ class MLP(Network):
 
         self.input_shape = input_shape
         self.layer_shapes = layer_shapes
-        self.output_shape = output_shape
 
         self.layer_constructors_generator = layer_constructors_generator
 
@@ -29,12 +29,19 @@ class MLP(Network):
         self.layers = None
         self.output_node = None
 
+        self._initialise()
+
     def _initialise(self):
         """
         () -> ()
         Initialise the network's layers.
         """
-        full_layers = [self.input_shape] + self.layer_shapes + [self.output_shape]
+        if self.input_node is None:
+            self.input_node = placeholder_node(self.extend_name('input_node'),
+                self.input_shape, dynamic_dimensions=1)
+
+
+        full_layers = [self.input_shape] + self.layer_shapes
         layer_params = zip(full_layers[:-1], full_layers[1:])
         constructors = self.layer_constructors_generator(len(self.layer_shapes) + 1)
         
@@ -59,7 +66,7 @@ class MLP(Network):
         """
         return self.output_node
 
-    def get_variables():
+    def get_variables(self):
         """
         () -> [tf.Variable]
         """
