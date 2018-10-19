@@ -13,22 +13,26 @@ class VariationalLayer(Layer):
 
     def __init__(self, name, session, input_shape, output_shape,
             means_activation=Activation.TANH, stddevs_activation=Activation.SIGMOID,
-            input_node=None, save_location=None):
+            output_activation=Activation.DEFAULT, input_node=None,
+            batch_normalisation=False, save_location=None):
         """
         String -> tf.Session -> [Int] -> [Int] -> (tf.Tensor -> String -> tf.Tensor)?
-            -> (tf.Tensor -> String -> tf.Tensor)? -> tf.Tensor?
-            -> String? -> VariationalLayer
+            -> (tf.Tensor -> String -> tf.Tensor)?-> (tf.Tensor -> String -> tf.Tensor)?
+            -> tf.Tensor? -> Bool? -> String? -> VariationalLayer
         """
         super().__init__(name, session, input_shape,
             output_shape, input_node, save_location)
 
         self.means_activation = means_activation
         self.stddevs_activation = stddevs_activation
+        self.output_activation = output_activation
 
         self.means_layer = None
         self.stddevs_layer = None
         self.means_output_node = None
         self.stddevs_output_node = None
+
+        self.batch_normalisation = batch_normalisation
 
         self._initialise()
 
@@ -42,7 +46,8 @@ class VariationalLayer(Layer):
             input_shape=self.input_shape,
             output_shape=self.output_shape,
             activation=self.means_activation,
-            input_node=self.input_node
+            input_node=self.input_node,
+            batch_normalisation=self.batch_normalisation
         )
         self.means_output_node = self.means_layer.output_node
 
@@ -52,13 +57,17 @@ class VariationalLayer(Layer):
             input_shape=self.input_shape,
             output_shape=self.output_shape,
             activation=self.stddevs_activation,
-            input_node=self.input_node
+            input_node=self.input_node,
+            batch_normalisation=self.batch_normalisation
         )
         self.stddevs_output_node = self.stddevs_layer.output_node
 
-        self.output_node = tf.add(tf.multiply(tf.random_normal(self.output_shape),
+        self.output_node = self.output_activation(
+            tf.add(tf.multiply(tf.random_normal(self.output_shape),
             self.stddevs_output_node), self.means_output_node,
-            name=self.extend_name('output_node'))
+            name=self.extend_name('output_node')),
+            self.extend_name('activated_output')
+        )
 
     def get_variables(self):
         """
