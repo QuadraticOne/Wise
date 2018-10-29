@@ -12,10 +12,11 @@ class GaussianWeightsLayer(Layer):
     """
 
     def __init__(self, name, session, input_shape, output_shape,
-            activation=Activation.DEFAULT, input_node=None, save_location=None):
+            activation=Activation.DEFAULT, input_node=None,
+            batch_normalisation=False, save_location=None):
         """
         String -> tf.Session -> [Int] -> [Int] -> (tf.Tensor -> String -> tf.Tensor)
-            -> tf.Tensor? -> String? -> Network
+            -> tf.Tensor? -> Bool? -> String? -> Network
         """
         super().__init__(name, session, input_shape, output_shape,
             input_node, save_location)
@@ -29,6 +30,9 @@ class GaussianWeightsLayer(Layer):
         self.after_weights = None
         self.biases = None
         self.after_biases = None
+
+        # START_HERE
+        self.batch_normalisation = batch_normalisation
 
         self._initialise()
 

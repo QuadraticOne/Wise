@@ -10,13 +10,15 @@ class FeedforwardNetwork(MLP):
     """
 
     def __init__(self, name, session, input_shape, layer_shapes, activations=
-            Activation.all(Activation.DEFAULT), input_node=None, save_location=None):
+            Activation.all(Activation.DEFAULT), input_node=None, save_location=None,
+            batch_normalisation=False):
         """
         String -> tf.Session -> [Int] -> [[Int]] ->
             (Int -> [(tf.Tensor -> String -> tf.Tensor)]) -> tf.Tensor? -> String? ->
             FeedforwardNetwork
         Create a feedforward network from the given parameters.
         """
+        self.batch_normalisation = batch_normalisation
         super().__init__(
             name=name,
             session=session,
@@ -42,6 +44,7 @@ class FeedforwardNetwork(MLP):
                 output_shape=output_shape,
                 activation=activation,
                 input_node=input_node,
-                save_location=save_location
+                save_location=save_location,
+                batch_normalisation=self.batch_normalisation
             )
         return constructor
