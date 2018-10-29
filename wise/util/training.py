@@ -4,7 +4,7 @@ import tensorflow as tf
 
 def regression_metrics(output_node_shape, output_node, name, variables=None):
     """
-    [Int] -> tf.Tensor -> -> String -> [tf.Variable]?
+    [Int] -> tf.Tensor -> String -> [tf.Variable]?
         -> (TargetNode, LossNode, Optimiser)
     Create metrics - target node, loss node, and optimiser - for a
     regression model.
