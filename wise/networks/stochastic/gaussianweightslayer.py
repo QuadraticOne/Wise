@@ -31,8 +31,9 @@ class GaussianWeightsLayer(Layer):
         self.biases = None
         self.after_biases = None
 
-        # START_HERE
         self.batch_normalisation = batch_normalisation
+        self.batch_normalised_weights = None
+        self.batch_normalised_biases = None
 
         self._initialise()
 
@@ -50,10 +51,18 @@ class GaussianWeightsLayer(Layer):
             name=self.extend_name('noise'))
         self.weights = tf.add(self.weight_means, tf.multiply(self.weight_noise,
             self.weight_stddevs), name=self.extend_name('weights'))
+        self.batch_normalised_weights = StochasticBinaryUnitLayer(
+            self.extend_name('batch_normalised_weights'), self.get_session(),
+            weight_shape, input_node=self.weights).get_output_node() \
+            if self.batch_normalisation else self.weights
 
         self.after_weights = tf.tensordot(self.input_node, self.weights,
             len(self.input_shape), name=self.extend_name('after_weights'))
         self.biases = glorot_initialised_vars(self.extend_name('biases'), self.output_shape)
+        self.batch_normalised_biases = StochasticBinaryUnitLayer(
+            self.extend_name('batch_normalised_biases'), self.get_session(),
+            self.output_shape, input_node=self.biases).get_output_node() \
+            if self.batch_normalisation else self.biases
         self.after_biases = tf.add(self.after_weights, self.biases,
             name=self.extend_name('after_biases'))
         self.output_node = self.activation(self.after_biases,
