@@ -15,7 +15,7 @@ class FeedforwardLayer(Layer):
             batch_normalisation=False, save_location=None):
         """
         String -> tf.Session -> [Int] -> [Int] -> (tf.Tensor -> String -> tf.Tensor)
-            -> tf.Tensor? -> String? -> Network
+            -> tf.Tensor? -> Bool? -> String? -> Network
         """
         super().__init__(name, session, input_shape, output_shape,
             input_node, save_location)

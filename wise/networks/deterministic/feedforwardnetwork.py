@@ -15,7 +15,7 @@ class FeedforwardNetwork(MLP):
         """
         String -> tf.Session -> [Int] -> [[Int]] ->
             (Int -> [(tf.Tensor -> String -> tf.Tensor)]) -> tf.Tensor? -> String? ->
-            FeedforwardNetwork
+            Bool? -> FeedforwardNetwork
         Create a feedforward network from the given parameters.
         """
         self.batch_normalisation = batch_normalisation

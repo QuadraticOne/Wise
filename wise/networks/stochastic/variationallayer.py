@@ -32,7 +32,6 @@ class VariationalLayer(Layer):
         self.means_output_node = None
         self.stddevs_output_node = None
 
-        # TODO: finish adding batch normalisation
         self.batch_normalisation = batch_normalisation
 
         self._initialise()

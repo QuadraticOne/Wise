@@ -16,7 +16,7 @@ class GaussianWeightsNetwork(MLP):
         """
         String -> tf.Session -> [Int] -> [[Int]] ->
             (Int -> [(tf.Tensor -> String -> tf.Tensor)]) -> tf.Tensor? -> String? ->
-            FeedforwardNetwork
+            Bool? -> FeedforwardNetwork
         Create a network with Gaussian sampled weights from the given parameters.
         """
         self.batch_normalisation = batch_normalisation
