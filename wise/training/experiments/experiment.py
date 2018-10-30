@@ -29,9 +29,10 @@ class Experiment:
         the end.
         """
         self.io._create_dirs_for_path(file_name)
-        jsons = self._get_jsons_in_directory(file_name)
+        jsons = set(self._get_jsons_in_directory(file_name))
+        path_without_identifier = file_name.split('/')[-1] + '-'
         i = 0
-        while file_name.split('/')[-1] + '-' + str(i) in jsons:
+        while path_without_identifier + str(i) in jsons:
             i += 1
         
         data = self._get_experiment_data()
