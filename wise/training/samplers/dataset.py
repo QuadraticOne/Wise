@@ -1,4 +1,5 @@
 from wise.training.samplers.sampler import Sampler
+from wise.util.io import IO
 from random import choice
 
 
@@ -24,6 +25,28 @@ class DataSetSampler(Sampler):
         Int -> [a]
         """
         return [choice(self.points) for _ in range(n)]
+
+    def save(self, directory, file_name):
+        """
+        String -> String -> ()
+        Save the points that make up this data set to a file.  They can be
+        restored using DataSetSampler.restore(...).  Do not include a file
+        extension in the file name.
+        """
+        io = IO(directory, create_if_missing=True)
+        io.save_object(self.points, file_name)
+
+    @staticmethod
+    def restore(directory, file_name):
+        """
+        String -> String -> DataSetSampler
+        Restore a data set sampler that was previously saved into the given
+        directory and file name.  Do not include a file extension in the file
+        name.
+        """
+        io = IO(directory, create_if_missing=False)
+        data = io.restore_object(file_name)
+        return DataSetSampler(data)
 
     @staticmethod
     def from_sampler(sampler, data_set_size):
