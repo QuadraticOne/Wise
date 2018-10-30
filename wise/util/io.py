@@ -1,6 +1,7 @@
 from os.path import isdir
 from os import makedirs
 from pickle import dump, load
+from json import dumps, loads
 import tensorflow as tf
 
 
@@ -86,6 +87,25 @@ class IO:
         """
         saver = tf.train.Saver(save_relative_paths=True, var_list=variables)
         saver.restore(session, self._extend(path + '/' + path))
+
+    def save_json(self, json_dict, path):
+        """
+        Dict -> String -> ()
+        Save the data contained in the python dictionary into
+        a JSON file.
+        """
+        with open(self._extend(path, '.json'), 'w') as f:
+            f.write(dumps(json_dict))
+
+    def restore_json(self, path):
+        """
+        String -> Dict
+        Restore the data contained in the JSON file into a
+        python dictionary.
+        """
+        with open(self._extend(path, '.json'), 'r') as f:
+            obj = loads(f.read())
+        return obj
 
     def _create_dirs_for_path(self, path):
         """
