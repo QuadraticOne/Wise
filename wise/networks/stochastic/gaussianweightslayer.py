@@ -1,6 +1,7 @@
 from wise.networks.layer import Layer
 from wise.networks.activation import Activation
 from wise.networks.deterministic.feedforwardlayer import FeedforwardLayer
+from wise.networks.stochastic.noise import StochasticBinaryUnitLayer
 from wise.util.tensors import glorot_initialised_vars
 import tensorflow as tf
 
