@@ -112,7 +112,7 @@ def dict_contains_key(nested_key):
     a full stop as if it were being accessed in plain JavaScript.  
     """
     unnested_keys = nested_key.split('.')
-    return lambda _d: _dict_contains_key_from_list(unnested_keys, _d)
+    return lambda d: _dict_contains_key_from_list(unnested_keys, d)
 
 
 def _dict_contains_key_from_list(keys, d):
@@ -154,3 +154,28 @@ def _predicate_on_key_from_list(keys, predicate, d):
     else:
         return _predicate_on_key_from_list(keys[1:], predicate, d[keys[0]]) \
             if keys[0] in d else False
+
+
+def map_on_dictionary_key(nested_key, f):
+    """
+    String -> (Object -> Object) -> (Dict -> Object)
+    Return a function which indexes a dictionary, applies a function to
+    the value stored in that index, and returns that value.
+    """
+    unnested_keys = nested_key.split('.')
+    return lambda d: _map_on_key_from_list(unnested_keys, f, d)
+
+
+def _map_on_key_from_list(keys, f, d):
+    """
+    [String] -> (Object -> Object) -> Dict -> Object
+    Given a list of nested keys, a transfer function, and a dictionary,
+    return the result of passing the value referenced by applying the
+    keys recursively to the dictionary through the transfer function.
+    If the dictionary does not contain that key, returns None.
+    """
+    if len(keys) == 0:
+        return f(d)
+    else:
+        return _map_on_key_from_list(keys[1:], f, d[keys[0]]) \
+            if keys[0] in d else None
