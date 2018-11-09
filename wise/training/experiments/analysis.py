@@ -1,3 +1,8 @@
+from os import listdir
+from os.path import join, isdir
+from json import loads
+
+
 class ResultsFilter:
     """
     Class for filtering the results of multiple experiments and plotting them.
@@ -14,16 +19,44 @@ class ResultsFilter:
         self.root_directory = root_directory
         self.include_sub_directories = include_sub_directories
 
+        self.experiment_paths = None
         self.experiments = None
 
-    def _get_experiments(self):
+        self._initialise()
+
+    def _initialise(self):
         """
         () -> ()
-        Populate the experiments field of this object with the names of all
-        available experiments in the relevant directories.
+        Find all available experiments but do not load any yet.
         """
-        self.experiments = {}
-        # TODO: finish implementation
+        self.experiment_paths = self._get_experiments(self.root_directory, True)
+        self.experiments = {path: None for path in self.experiment_paths}
 
-    def _get_experiments(self, file_path):
-        pass
+    def _get_experiments(self, file_path, force_include_sub_directories):
+        """
+        String -> Bool -> [String]
+        Get a list of all experiments in the directory, if the path points
+        to a directory and `include_sub_directories` is set to True, or
+        simply return the file name if the path references a file.  Since
+        this function is called recursively, an option is included to force
+        the inclusion of sub-directories.
+        """
+        experiments = []
+        if isdir(file_path):
+            if self.include_sub_directories or force_include_sub_directories:
+                for child_file in listdir(file_path):
+                    experiments += self._get_experiments(
+                        join(file_path, child_file), False)
+        else:
+            if '.json' in file_path:
+                experiments.append(file_path)
+        return experiments
+
+    def _load_experiment_if_unloaded(self, path):
+        """
+        () -> ()
+        Checks if the experiment has been loaded or not, and loads it if not.
+        """
+        if self.experiments[path] is None:
+            with open(path, 'r') as f:
+                self.experiments[path] = loads(f.read())
