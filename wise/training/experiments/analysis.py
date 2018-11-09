@@ -101,3 +101,56 @@ class ResultsFilter:
         """
         self._load_experiment_if_unloaded(path)
         return self.experiments[path]
+
+
+def dict_contains_key(nested_key):
+    """
+    String -> (Dict -> Bool)
+    Return a function which takes a dictionary and determines whether it
+    contains the nested key.  Nested keys are strings which allow indexing
+    over nested dictionaries, by separating the keys at each level with
+    a full stop as if it were being accessed in plain JavaScript.  
+    """
+    unnested_keys = nested_key.split('.')
+    return lambda _d: _dict_contains_key_from_list(unnested_keys, _d)
+
+
+def _dict_contains_key_from_list(keys, d):
+    """
+    [String] -> Dict -> Bool
+    Given a list of nested keys and a dictionary, determine whether or
+    not that dictionary contains the leaf element produced by indexing
+    all the keys.
+    """
+    if len(keys) == 0:
+        return True
+    else:
+        return dict_contains_key_from_list(keys[1:], d[keys[0]]) \
+            if keys[0] in d else False
+
+
+def predicate_on_dictionary_key(nested_key, predicate):
+    """
+    String -> (Object -> Bool) -> (Dict -> Bool)
+    Return a function which takes a dictionary and returns the result
+    of a predicate which takes a value as indexed by the given nested key.
+    If the dictionary does not contain the key, False will be returned
+    by default.
+    """
+    unnested_keys = nested_key.split('.')
+    return lambda d: _predicate_on_key_from_list(unnested_keys, predicate, d)
+
+
+def _predicate_on_key_from_list(keys, predicate, d):
+    """
+    [String] -> (Object -> Bool) -> Dict -> Bool
+    Given a list of nested keys, a predicate, and a dictionary, determine
+    whether or not the leaf element produced by indexing all the keys
+    satisfies the predicate.  If any of the keys are not in the dictionary
+    this will return False.
+    """
+    if len(keys) == 0:
+        return predicate(d)
+    else:
+        return _predicate_on_key_from_list(keys[1:], predicate, d[keys[0]]) \
+            if keys[0] in d else False
