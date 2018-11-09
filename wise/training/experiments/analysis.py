@@ -24,6 +24,32 @@ class ResultsFilter:
 
         self._initialise()
 
+    def filter_experiments(self, predicate):
+        """
+        (Dict -> Bool) -> [Dict]
+        Return a list of all experiments which match the given predicate.
+        """
+        filtered_list = []
+        for path in self.experiment_paths:
+            self._load_experiment_if_unloaded(path)
+            experiment = self.get_by_path(path)
+            if predicate(experiment):
+                filtered_list.append(experiment)
+            self._unload_experiment(path)
+        return filtered_list
+
+    def extract_results(self, result_getters, experiments=None):
+        """
+        [(Dict -> Object)] -> [Dict]? -> [[Object]]
+        Get the specified result from each experiment in the given list.  If
+        no list is provided, this will apply to all experiments.
+        """
+        dicts = experiments if experiments is not None else \
+            (self.get_by_path(path) for path in self.experiment_paths)
+        return [
+            [getter(d) for getter in result_getters] for d in dicts
+        ]
+
     def _initialise(self):
         """
         () -> ()
@@ -54,9 +80,24 @@ class ResultsFilter:
 
     def _load_experiment_if_unloaded(self, path):
         """
-        () -> ()
+        String -> ()
         Checks if the experiment has been loaded or not, and loads it if not.
         """
         if self.experiments[path] is None:
             with open(path, 'r') as f:
                 self.experiments[path] = loads(f.read())
+
+    def _unload_experiment(self, path):
+        """
+        String -> ()
+        Unloads the experiment data from memory.
+        """
+        self.experiments[path] = None
+
+    def get_by_path(self, path):
+        """
+        String -> Dict
+        Return the experiment data for the given experiment name.
+        """
+        self._load_experiment_if_unloaded(path)
+        return self.experiments[path]
