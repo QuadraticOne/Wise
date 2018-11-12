@@ -10,6 +10,7 @@ class ResultsFilter:
     """
 
     BASE_PLOT_RADIUS = 25
+    PLOT_COLOURS = 'brcym'
 
     def __init__(self, root_directory, include_sub_directories=False):
         """
@@ -144,8 +145,9 @@ class ResultsFilter:
         Plot the data set in two dimensions.  See the documentation of
         `plot_results` for argument types, except `groups`, which is a dictionary.
         """
-        colours = 'brgy'
         colour_index = 0
+        legend_scatters = []
+        legend_names = []
 
         for label, group_experiments in groups.items():
             values = self.extract_results([x, y, radius], group_experiments)
@@ -154,8 +156,14 @@ class ResultsFilter:
                 xs.append(point[0])
                 ys.append(point[1])
                 radii.append(point[2] * point[2] * ResultsFilter.BASE_PLOT_RADIUS)
-            plt.scatter(xs, ys, c=colours[colour_index], s=radii, label=label)
+            legend_scatters.append(plt.scatter(xs, ys,
+                c=ResultsFilter.PLOT_COLOURS[colour_index], s=radii, label=label))
+            legend_names.append(label)
             colour_index += 1
+
+        plt.legend(legend_scatters, legend_names)
+        plt.xlabel(x_label)
+        plt.ylabel(y_label)
         plt.show()
 
     def _plot_results_3d(self, x, y, z, groups, radius, x_label, y_label, z_label):
