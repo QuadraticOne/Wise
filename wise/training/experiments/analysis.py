@@ -1,12 +1,15 @@
 from os import listdir
 from os.path import join, isdir
 from json import loads
+import matplotlib.pyplot as plt
 
 
 class ResultsFilter:
     """
     Class for filtering the results of multiple experiments and plotting them.
     """
+
+    BASE_PLOT_RADIUS = 25
 
     def __init__(self, root_directory, include_sub_directories=False):
         """
@@ -42,7 +45,9 @@ class ResultsFilter:
         """
         [(Dict -> Object)] -> [Dict]? -> [[Object]]
         Get the specified result from each experiment in the given list.  If
-        no list is provided, this will apply to all experiments.
+        no list is provided, this will apply to all experiments.  The inner
+        list contains the result of each getter for a single datum, while the
+        outer list contains one of these for each datum.
         """
         dicts = experiments if experiments is not None else \
             (self.get_by_path(path) for path in self.experiment_paths)
@@ -101,6 +106,64 @@ class ResultsFilter:
         """
         self._load_experiment_if_unloaded(path)
         return self.experiments[path]
+
+    def plot_results(self, x=None, y=None, z=None, group=None, radius=lambda _: 1,
+            x_label='x', y_label='y', z_label='z'):
+        """
+        (Dict -> Float)? -> (Dict -> Float)? -> (Dict -> Float)? -> (Dict -> String)?
+            -> (Dict -> Int)? -> String? -> String? -> String? -> ()
+        Plot the results, providing functions which extract the properties of
+        each point from each point in the data set.
+        """
+        groups = {}
+        if group is None:
+            groups['data'] = []
+            for path in self.experiment_paths:
+                self._load_experiment_if_unloaded(path)
+                experiment = self.get_by_path(path)
+                groups['data'].append(experiment)
+                self._unload_experiment(path)
+        else:
+            for path in self.experiment_paths:
+                self._load_experiment_if_unloaded(path)
+                experiment = self.get_by_path(path)
+                _group = group(experiment)
+                if _group in groups:
+                    groups[_group].append(experiment)
+                else:
+                    groups[_group] = [experiment]
+                self._unload_experiment(path)
+
+        if z is None:
+            self._plot_results_2d(x, y, groups, radius, x_label, y_label)
+        else:
+            self._plot_results_3d(x, y, z, groups, radius, x_label, y_label, z_label)
+
+    def _plot_results_2d(self, x, y, groups, radius, x_label, y_label):
+        """
+        Plot the data set in two dimensions.  See the documentation of
+        `plot_results` for argument types, except `groups`, which is a dictionary.
+        """
+        colours = 'brgy'
+        colour_index = 0
+
+        for label, group_experiments in groups.items():
+            values = self.extract_results([x, y, radius], group_experiments)
+            xs, ys, radii = [], [], []
+            for point in values:
+                xs.append(point[0])
+                ys.append(point[1])
+                radii.append(point[2] * point[2] * ResultsFilter.BASE_PLOT_RADIUS)
+            plt.scatter(xs, ys, c=colours[colour_index], s=radii, label=label)
+            colour_index += 1
+        plt.show()
+
+    def _plot_results_3d(self, x, y, z, groups, radius, x_label, y_label, z_label):
+        """
+        Plot the data set in three dimensions.  See the documentation of
+        `plot_results` for argument types, except `groups`, which is a dictionary.
+        """
+        raise NotImplementedError('3D plotting not yet implemented')
 
 
 def dict_contains_key(nested_key):
@@ -179,3 +242,19 @@ def _map_on_key_from_list(keys, f, d):
     else:
         return _map_on_key_from_list(keys[1:], f, d[keys[0]]) \
             if keys[0] in d else None
+
+
+def group_by(data, grouping_function):
+    """
+    [a] -> (a -> Object) -> Dict
+    Group the given data based on the value that is returned by
+    feeding each datum to a grouping function.
+    """
+    groups = {}
+    for datum in data:
+        group = grouping_function(datum)
+        if group in groups:
+            groups[group].append(datum)
+        else:
+            groups[group] = [datum]
+    return groups
