@@ -227,29 +227,47 @@ def _predicate_on_key_from_list(keys, predicate, d):
             if keys[0] in d else False
 
 
-def map_on_dictionary_key(nested_key, f):
+def map_on_dictionary_key(nested_key, f, expect_list_at_leaf=False):
     """
     String -> (Object -> Object) -> (Dict -> Object)
     Return a function which indexes a dictionary, applies a function to
     the value stored in that index, and returns that value.
+
+    Where any of the keys are lists, the result will be compiled from
+    each element into a list of results.  If the leaf node is expected
+    to be a list and this behaviour should be deactivated for the leaf
+    node, set `expect_list_at_leaf` to True.
     """
     unnested_keys = nested_key.split('.')
-    return lambda d: _map_on_key_from_list(unnested_keys, f, d)
+    return lambda d: _map_on_key_from_list(unnested_keys, f, d,
+        expect_list_at_leaf=expect_list_at_leaf)
 
 
-def _map_on_key_from_list(keys, f, d):
+def _map_on_key_from_list(keys, f, d, expect_list_at_leaf=False):
     """
     [String] -> (Object -> Object) -> Dict -> Object
     Given a list of nested keys, a transfer function, and a dictionary,
     return the result of passing the value referenced by applying the
     keys recursively to the dictionary through the transfer function.
     If the dictionary does not contain that key, returns None.
+
+    Where any of the keys are lists, the result will be compiled from
+    each element into a list of results.  If the leaf node is expected
+    to be a list and this behaviour should be deactivated for the leaf
+    node, set `expect_list_at_leaf` to True.
     """
     if len(keys) == 0:
         return f(d)
     else:
-        return _map_on_key_from_list(keys[1:], f, d[keys[0]]) \
-            if keys[0] in d else None
+        if keys[0] not in d:
+            return None
+
+        ignore_mapping = len(keys) == 1 and expect_list_at_leaf
+        if type(d[keys[0]]) == type([]) and not ignore_mapping:
+            return [_map_on_key_from_list(keys[1:], f, sub_key) \
+                for sub_key in d[keys[0]]]
+        else: 
+            return _map_on_key_from_list(keys[1:], f, d[keys[0]])
 
 
 def group_by(data, grouping_function):
