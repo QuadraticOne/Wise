@@ -28,19 +28,45 @@ class Experiment:
         the name of the file already exists, an identifier will be added to
         the end.
         """
+        data = self._get_experiment_data()
+        self.io.save_json(data, self._get_next_file_name(file_name))
+
+    def log_experiments(self, file_name, repeats, reset=lambda: None):
+        """
+        String -> Int -> (() -> ())? -> ()
+        Perform the experiment a number of times and log the details of each
+        run in the log directory.  If the name of the file already exists,
+        an identifier will be added to the end.  The optional reset function
+        will be called before each run.
+        """
+        data = []
+        for _ in range(repeats):
+            reset()
+            data.append(self._get_experiment_data())
+        results = {
+            'repeats': repeats,
+            'data': data
+        }
+        self.io.save_json(results, self._get_next_file_name(file_name))
+
+    def _get_next_file_name(self, file_path):
+        """
+        String -> String
+        Append a number to the end of the file path such that the resulting
+        file name does not exist in the log directory.
+        """
         self.io._create_dirs_for_path(file_name)
         jsons = set(self._get_jsons_in_directory(file_name))
         path_without_identifier = file_name.split('/')[-1] + '-'
         i = 0
         while path_without_identifier + str(i) in jsons:
             i += 1
-        
-        data = self._get_experiment_data()
-        self.io.save_json(data, file_name + '-' + str(i))
+        return file_name + '-' + str(i)
 
     def _get_experiment_data(self):
         """
         () -> Dict
+        Perform the experiment and save the results in an enclosing JSON file.
         """
         data = {}
         data['start_time_unix'] = time()
