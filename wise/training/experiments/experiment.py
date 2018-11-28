@@ -49,7 +49,7 @@ class Experiment:
         }
         self.io.save_json(results, self._get_next_file_name(file_name))
 
-    def _get_next_file_name(self, file_path):
+    def _get_next_file_name(self, file_name):
         """
         String -> String
         Append a number to the end of the file path such that the resulting
