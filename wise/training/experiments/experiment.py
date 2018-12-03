@@ -31,6 +31,17 @@ class Experiment:
         data = self._get_experiment_data()
         self.io.save_json(data, self._get_next_file_name(file_name))
 
+    def log_experiment_with_metadata(self, file_name, metadata):
+        """
+        String -> Dict -> ()
+        Perform the experiment and log its details, along with some metadata,
+        om the log directory.  If the name of the file already exists, an
+        identifier will be added to the end.
+        """
+        data = self._get_experiment_data()
+        self._add_metadata(data, metadata)
+        self.io.save_json(data, self._get_next_file_name(file_name))
+
     def log_experiments(self, file_name, repeats, reset=lambda: None):
         """
         String -> Int -> (() -> ())? -> ()
@@ -48,6 +59,39 @@ class Experiment:
             'data': data
         }
         self.io.save_json(results, self._get_next_file_name(file_name))
+
+    def log_experiments_with_metadata(self, file_name, repeats,
+            metadata_lambda, reset=lambda: None):
+        """
+        String -> Int -> (Int -> Dict) -> (() -> ())? -> ()
+        Perform the experiment a number of times and log the details of each
+        run in the log directory.  If the name of the file already exists,
+        an identifier will be added to the end.  The optional reset function
+        will be called before each run.  Metadata for each run is given
+        determined as a function of its index.
+        """
+        data = []
+        for repeat_index in range(repeats):
+            reset()
+            datum = self._get_experiment_data()
+            self._add_metadata(datum, metadata_lambda(repeat_index))
+            data.append(datum)
+        results = {
+            'repeats': repeats,
+            'data': data
+        }
+        self.io.save_json(results, self._get_next_file_name(file_name))
+
+    def _add_metadata(self, data, metadata):
+        """
+        Dict -> Dict -> ()
+        Add a metadata field to the given JSON object, represented as
+        a Python dictionary.  If a 'metadata' key already exists, an
+        exception will be thrown.
+        """
+        if 'metadata' in data:
+            raise Exception('the experiment already contains a metadata field')
+        data['metadata'] = metadata
 
     def _get_next_file_name(self, file_name):
         """
