@@ -264,10 +264,12 @@ def _map_on_key_from_list(keys, f, d, expect_list_at_leaf=False):
 
         ignore_mapping = len(keys) == 1 and expect_list_at_leaf
         if type(d[keys[0]]) == type([]) and not ignore_mapping:
-            return [_map_on_key_from_list(keys[1:], f, sub_key) \
+            return [_map_on_key_from_list(keys[1:], f, sub_key,
+                expect_list_at_leaf=expect_list_at_leaf) \
                 for sub_key in d[keys[0]]]
         else: 
-            return _map_on_key_from_list(keys[1:], f, d[keys[0]])
+            return _map_on_key_from_list(keys[1:], f, d[keys[0]],
+                expect_list_at_leaf=expect_list_at_leaf)
 
 
 def group_by(data, grouping_function):
