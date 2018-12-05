@@ -1,5 +1,5 @@
 from os.path import isdir
-from os import makedirs
+from os import makedirs, listdir
 from pickle import dump, load
 from json import dumps, loads
 import tensorflow as tf
@@ -107,6 +107,25 @@ class IO:
             obj = loads(f.read())
         return obj
 
+    def all_files(self, sub_file_path='', include_sub_folders=False,
+            remove_extensions=True):
+        """
+        String? -> Bool? -> Bool? -> [String]
+        """
+        files = listdir(self.file_path + sub_file_path)
+        processed_files = []
+        for f in files:
+            if not isdir(self.file_path + sub_file_path + f):
+                processed_files.append(sub_file_path +
+                    (self._remove_file_extension(f) if remove_extensions else f))
+            else:
+                if include_sub_folders:
+                    processed_files += self.all_files(
+                        sub_file_path=sub_file_path + f + '/',
+                        include_sub_folders=include_sub_folders,
+                        remove_extensions=remove_extensions)
+        return processed_files
+
     def _create_dirs_for_path(self, path):
         """
         String -> ()
@@ -120,3 +139,9 @@ class IO:
         String -> String
         """
         return '/'.join(path.split('/')[:-1])
+
+    def _remove_file_extension(self, path):
+        """
+        String -> String
+        """
+        return path.split('.')[0]
