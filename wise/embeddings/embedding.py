@@ -1,4 +1,5 @@
 from wise.networks.network import Network
+from wise.networks.deterministic.feedforwardnetwork import FeedforwardNetwork
 from wise.networks.activation import Activation
 from wise.util.tensors import int_placeholder_node, glorot_initialised_vars
 import tensorflow as tf
@@ -15,14 +16,16 @@ class Embedding(Network):
             activation=Activation.IDENTITY, save_location=None):
         """
         String -> tf.Session -> [object] -> Int
-            -> (String -> tf.Session -> Int -> tf.Node -> (Network, tf.Node))
-            -> (a -> Bool) -> (tf.Tensor -> String -> tf.Tensor)
+            -> (String -> tf.Session -> Int -> tf.Node 
+                -> (Network, tf.Node, Int))
+            -> (a -> [Float]) -> (tf.Tensor -> String -> tf.Tensor)
             -> String? -> Embedding
         Create an embedding for the given list of items.  The discriminator
         generator should be a function which, given a name, session, 
         input dimension, and input node, returns a network as well
         as the node from the network which should be used as its
-        output.
+        output and the dimensionality of that output node (which must
+        be a vector).
         """
         super().__init__(name, session, save_location)
 
@@ -30,14 +33,17 @@ class Embedding(Network):
         self.n_items = len(items)
         self.embedding_dimension = embedding_dimension
         self.discriminator_builder = discriminator_builder
+        self.truth_function = truth_function
         self.activation = activation
 
         self.embeddings = None
         self.indices_input = None
         self.lookups = None
+        self.activated_lookups = None
 
         self.discriminator = None
         self.output_node = None
+        self.output_dimension = None
 
         self._initialise()
 
@@ -52,9 +58,34 @@ class Embedding(Network):
             'indices_input'), [], 1)
         self.lookups = tf.nn.embedding_lookup(self.embeddings,
             self.indices_input, name=self.extend_name('lookups'))
+        self.activated_lookups = self.activation(self.lookups,
+            self.extend_name('activated_embeddings'))
+
+        self.discriminator, self.output_node, self.output_dimension = \
+            self.discriminator_builder(self.extend_name('discriminator'),
+                self.get_session(), self.embedding_dimension,
+                self.activated_lookups)
         
     def get_variables(self):
         """
         () -> [tf.Variable]
         """
-        return self.embeddings + self.discriminator.get_variables()
+        return [self.embeddings] + self.discriminator.get_variables()
+
+    @staticmethod
+    def feedforward_classification_discriminator(hidden_layer_shapes):
+        """
+        [Int] -> (String -> tf.Session -> Int
+            -> tf.Node -> (Network, tf.Node, Int))
+        Create a function that can be called to return a standard
+        feedforward network which has ReLU activations on all
+        hidden layers, and a sigmoid activation on its single
+        output node.
+        """
+        def build(name, session, input_dimension, input_node):
+            net = FeedforwardNetwork(name, session, [input_dimension],
+                hidden_layer_shapes + [[1]], activations=
+                Activation.all_except_last(Activation.LEAKY_RELU,
+                Activation.SIGMOID), input_node=input_node)
+            return net, net.output_node, 1
+        return build
