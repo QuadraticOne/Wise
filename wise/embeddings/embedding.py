@@ -45,6 +45,8 @@ class Embedding(Network):
         self.output_node = None
         self.output_dimension = None
 
+        self.index_lookup = None
+
         self._initialise()
 
     def _initialise(self):
@@ -65,6 +67,8 @@ class Embedding(Network):
             self.discriminator_builder(self.extend_name('discriminator'),
                 self.get_session(), self.embedding_dimension,
                 self.activated_lookups)
+
+        self.index_lookup = self._invert_items(self.items)
         
     def get_variables(self):
         """
@@ -89,3 +93,35 @@ class Embedding(Network):
                 Activation.SIGMOID), input_node=input_node)
             return net, net.output_node, 1
         return build
+
+    def _invert_items(self, items):
+        """
+        [a] -> Dict Int a
+        Produce a lookup dictionary, retrieving an item's index
+        given the item.
+        """
+        return { o: i for i, o in zip(range(self.n_items), items)}
+
+    def item_by_index(self, n):
+        """
+        Int -> a
+        """
+        return self.items[n]
+
+    def items_by_index(self, ns):
+        """
+        [Int] -> [a]
+        """
+        return [self.items[n] for n in ns]
+
+    def index_by_item(self, item):
+        """
+        a -> Int
+        """
+        return self.index_lookup[item]
+
+    def indices_by_idem(self, items):
+        """
+        [a] -> [Int]
+        """
+        return [self.index_lookup[item] for item in items]
