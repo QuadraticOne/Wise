@@ -1,7 +1,13 @@
 from wise.networks.network import Network
 from wise.networks.deterministic.feedforwardnetwork import FeedforwardNetwork
 from wise.networks.activation import Activation
-from wise.util.tensors import int_placeholder_node, glorot_initialised_vars
+from wise.training.samplers.dataset import DataSetSampler
+from wise.training.samplers.anonymous import AnonymousSampler
+from wise.training.samplers.resampled import BinomialResampler
+from wise.training.samplers.feeddict import FeedDictSampler
+from wise.util.tensors import int_placeholder_node, \
+    placeholder_node, glorot_initialised_vars
+from random import randint
 import tensorflow as tf
 
 
@@ -75,6 +81,44 @@ class Embedding(Network):
         () -> [tf.Variable]
         """
         return [self.embeddings] + self.discriminator.get_variables()
+
+    def sampler(self, target_node=None,
+            resample=True, lazy=False, feed_dict=True):
+        """
+        Object? -> Bool? -> Bool? -> Bool? -> Sampler (Int, [Float])
+        Return a sampler for training the embeddings and discriminator,
+        optionally porting it to a feed dict sampler.
+        """
+        _target_node = target_node if target_node is not None else \
+            self.target_node()
+
+        if lazy:
+            def single():
+                n = randint(0, self.n_items - 1)
+                return n, self.truth_function(self.items[n])
+            sampler = AnonymousSampler(single=single)
+        else:
+            sampler = DataSetSampler(list(zip(range(self.n_items),
+                [self.truth_function(i) for i in self.items])))
+
+        if resample:
+            sampler = BinomialResampler.halves_on_last_element_head(sampler)
+
+        if not feed_dict:
+            return sampler
+
+        return FeedDictSampler(sampler, {
+            self.indices_input: lambda t: t[0],
+            _target_node: lambda t: t[1]
+        })
+
+    def target_node(self):
+        """
+        () -> tf.Placeholder
+        Return a target node suitable for training the embeddings.
+        """
+        return placeholder_node(self.extend_name('target'),
+            [self.output_dimension], dynamic_dimensions=1)
 
     @staticmethod
     def feedforward_classification_discriminator(hidden_layer_shapes):
