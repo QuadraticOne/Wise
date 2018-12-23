@@ -13,6 +13,18 @@ def placeholder_node(name, shape, dynamic_dimensions=0):
         shape=[None] * dynamic_dimensions + shape, name=name)
 
 
+def int_placeholder_node(name, shape, dynamic_dimensions=0):
+    """
+    String -> [Int] -> Int? -> tf.Placeholder
+    Create a placeholder node which accepts an int array of the given shape.
+    The `dynamic_dimensions` argument should be set to 1 or more depending on
+    the number of variable-size dimensions required at the start of the
+    placeholder.
+    """
+    return tf.placeholder(tf.int32,
+        shape=[None] * dynamic_dimensions + shape, name=name)
+
+
 def glorot_initialised_vars(name, shape):
     """
     String -> [Int] -> tf.Variable
