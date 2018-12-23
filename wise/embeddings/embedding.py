@@ -125,3 +125,28 @@ class Embedding(Network):
         [a] -> [Int]
         """
         return [self.index_lookup[item] for item in items]
+
+    def embedding_by_index(self, n):
+        """
+        Int -> [Float]
+        """
+        return self.feed(self.activated_lookups,
+            {self.indices_input: [n]})[0]
+
+    def embeddings_by_index(self, ns):
+        """
+        [Int] -> [[Float]]
+        """
+        return self.feed(self.activated_lookups, {self.indices_input: ns})
+
+    def embedding_by_item(self, item):
+        """
+        a -> [Float]
+        """
+        return self.embedding_by_index(self.index_by_item(item))
+
+    def embeddings_by_item(self, items):
+        """
+        [a] -> [[Float]]
+        """
+        return self.embeddings_by_index(self.indices_by_idem(items))
