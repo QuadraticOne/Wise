@@ -115,16 +115,13 @@ class GAN(Network):
             Sampler (Bool, [Float], [Float]))
         Return two samplers; one for training on real inputs,
         and one for training on false inputs.
-        """
-        def uniform_vector():
-            return np.random.uniform(-1., 1., size=[self.noise_dimension])
-        
+        """        
         # TODO: this could be sped up by just using zeros for noise
         #       since it is not used anyway
-        real_sampler = AnonymousSampler(
-            single=lambda: (True, uniform_vector(), choice(examples)))
-        fake_sampler = AnonymousSampler(
-            single=lambda: (False, uniform_vector(), choice(examples)))
+        real_sampler = AnonymousSampler(single=lambda:
+            (True, self.get_noise_vector(), choice(examples)))
+        fake_sampler = AnonymousSampler(single=lambda:
+            (False, self.get_noise_vector(), choice(examples)))
         
         if as_feed_dict:
             def to_feed_dict(s):
@@ -193,6 +190,40 @@ class GAN(Network):
                 real_sampler.batch(batch_size))
             self.feed([self.discriminator_optimiser, self.generator_optimiser],
                 fake_sampler.batch(batch_size))
+
+    def get_noise_vector(self):
+        """
+        () -> [Float]
+        Return a valid noise vector.
+        """
+        return np.random.uniform(-1., 1., size=[self.noise_dimension])
+
+    def get_generator_sample(self, noise_vector=None):
+        """
+        [Float]? -> [Float]
+        Return a single sample from the generator.  If no noise
+        vector is specified, one will be drawn from a uniform
+        distribution.
+        """
+        if noise_vector is None:
+            noise_vector = self.get_noise_vector()
+        return self.feed(self.fake_input,
+            {self.noise_vector: [noise_vector]})[0]
+
+    def get_generator_samples(self, noise_vectors=None):
+        """
+        [[Float]]? -> [[Float]]
+        Return a number of samples from the generator.  If an integer
+        value is passed instead of a list of noise vectors, the
+        noise vectors will be drawn from a uniform distribution.
+        """
+        if noise_vectors is None:
+            raise Exception('Either a set of noise vectors or '
+             + 'a batch size must be specified.')
+        elif type(noise_vectors) == type(0):
+            noise_vectors = [self.get_noise_vector() 
+                for _ in range(noise_vectors)]
+        return self.feed(self.fake_input, {self.noise_vector: noise_vectors})
 
     @staticmethod
     def default_network(hidden_layer_shapes):
