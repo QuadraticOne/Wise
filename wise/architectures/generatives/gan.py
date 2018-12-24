@@ -79,6 +79,20 @@ class GAN(Network):
         return self.generator.get_variables() + \
             self.discriminator.get_variables()
 
+    def loss_nodes(self):
+        """
+        () -> (tf.Tensor, tf.Tensor)
+        Return loss nodes for the generator and discriminator
+        respectively.  Note that the generator loss node is
+        only valid when the discriminator is classifying a
+        fake input.
+        """
+        generator_loss = tf.losses.log_loss(
+            0., self.discriminator_output)
+        discriminator_loss = tf.losses.log_loss(
+            1., self.discriminator_output)
+        return generator_loss, discriminator_loss
+
     @staticmethod
     def default_network(hidden_layer_shapes):
         """
