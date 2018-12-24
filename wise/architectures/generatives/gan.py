@@ -1,7 +1,10 @@
 from wise.networks.network import Network
 from wise.networks.deterministic.feedforwardnetwork import FeedforwardNetwork
 from wise.networks.activation import Activation
+from wise.training.samplers.anonymous import AnonymousSampler
+from wise.training.samplers.feeddict import FeedDictSampler
 from wise.util.tensors import placeholder_node
+from random import choice
 
 
 class GAN(Network):
@@ -33,6 +36,7 @@ class GAN(Network):
         self.real_input = None
         self.fake_input = None
 
+        # The switch is True for real inputs and False for fake inputs
         self.switch = None
         self.discriminator_input = None
         self.discriminator_output = None
@@ -92,6 +96,29 @@ class GAN(Network):
         discriminator_loss = tf.losses.log_loss(
             1., self.discriminator_output)
         return generator_loss, discriminator_loss
+
+    def sampler(self, examples, as_feed_dict=True):
+        """
+        [[Float]] -> Bool?
+            -> (Sampler (Bool, [Float]), Sampler (Bool, [Float]))
+        Return two samplers; one for training on real inputs,
+        and one for training on false inputs.
+        """
+        real_sampler = AnonymousSampler(
+            single=lambda: (True, choice(examples)))
+        fake_sampler = AnonymousSampler(
+            single=lambda: (False, choice(examples)))
+        
+        if as_feed_dict:
+            def to_feed_dict(s):
+                return FeedDictSampler(s, {
+                    self.switch: lambda t: t[0],
+                    self.real_input: lambda t: t[1]
+                })
+            real_sampler = to_feed_dict(real_sampler)
+            fake_sampler = to_feed_dict(fake_sampler)
+        
+        return real_sampler, fake_sampler
 
     @staticmethod
     def default_network(hidden_layer_shapes):
