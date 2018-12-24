@@ -22,9 +22,9 @@ class GAN(Network):
         """
         String -> tf.Session -> Int -> Int
             -> (String -> tf.Session -> Int -> tf.Tensor
-                -> Int -> (Network, tf.Tensor)) or [Int]
+                -> Int -> (Network, tf.Tensor)) or [[Int]]
             -> (String -> tf.Session -> Int -> tf.Tensor
-                -> Int -> (Network, tf.Tensor)) or [Int]
+                -> Int -> (Network, tf.Tensor)) or [[Int]]
             -> String? -> GAN
         """
         super().__init__(name, session, save_location)
@@ -105,7 +105,7 @@ class GAN(Network):
         fake input.
         """
         self.generator_loss = tf.losses.log_loss(
-            0., self.discriminator_output)
+            1., self.discriminator_output)
         self.discriminator_loss = tf.losses.log_loss(
             self.input_is_real, self.discriminator_output)
 
@@ -224,6 +224,23 @@ class GAN(Network):
             noise_vectors = [self.get_noise_vector() 
                 for _ in range(noise_vectors)]
         return self.feed(self.fake_input, {self.noise_vector: noise_vectors})
+
+    def evaluate_discriminator(self, examples, real_inputs, batch_size):
+        """
+        [[Float]] -> Bool -> Int -> Float
+        Evaluate the accuracy of the discriminator on a number
+        of samples from either the real or fake samplers.
+        """
+        sampler = self.samplers(examples)[0 if real_inputs else 1]
+        target = 1. if real_inputs else 0.
+        outputs = self.feed(self.discriminator_output,
+            sampler.batch(batch_size))
+        
+        count = 0
+        for output in outputs:
+            if (output[0] < 0.5) == (target < 0.5):
+                count += 1
+        return count / batch_size
 
     @staticmethod
     def default_network(hidden_layer_shapes):
