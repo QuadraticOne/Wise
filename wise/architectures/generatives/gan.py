@@ -7,6 +7,7 @@ from wise.util.tensors import placeholder_node
 from wise.util.training import default_adam_optimiser
 from random import choice
 import tensorflow as tf
+import numpy as np
 
 
 class GAN(Network):
@@ -40,11 +41,18 @@ class GAN(Network):
 
         # The switch is True for real inputs and False for fake inputs
         self.switch = None
+        self.input_is_real = None
         self.discriminator_input = None
         self.discriminator_output = None
 
         self.generator = None
         self.discriminator = None
+
+        self.generator_loss = None
+        self.discriminator_loss = None
+
+        self.generator_optimiser = None
+        self.discriminator_optimiser = None
 
         self._initialise()
 
@@ -52,8 +60,8 @@ class GAN(Network):
         """
         () -> ()
         """
-        self.noise_vector = tf.random_normal([self.noise_dimension],
-            name=self.extend_name('noise'))
+        self.noise_vector = placeholder_node(self.extend_name('noise'),
+            [self.noise_dimension], dynamic_dimensions=1)
         self.real_input = placeholder_node(self.extend_name('real_input'),
             [self.latent_dimension], dynamic_dimensions=1)
 
@@ -67,6 +75,7 @@ class GAN(Network):
         
         self.switch = tf.placeholder(tf.bool, shape=[None],
             name=self.extend_name('switch'))
+        self.input_is_real = tf.cast(self.switch, tf.float32)
         self.discriminator_input = tf.where(self.switch,
             self.real_input, self.fake_input)
         
@@ -87,42 +96,103 @@ class GAN(Network):
         return self.generator.get_variables() + \
             self.discriminator.get_variables()
 
-    def loss_nodes(self):
+    def set_loss_nodes(self):
         """
-        () -> (tf.Tensor, tf.Tensor)
-        Return loss nodes for the generator and discriminator
+        () -> ()
+        Set loss nodes for the generator and discriminator
         respectively.  Note that the generator loss node is
         only valid when the discriminator is classifying a
         fake input.
         """
-        generator_loss = tf.losses.log_loss(
+        self.generator_loss = tf.losses.log_loss(
             0., self.discriminator_output)
-        discriminator_loss = tf.losses.log_loss(
-            1., self.discriminator_output)
-        return generator_loss, discriminator_loss
+        self.discriminator_loss = tf.losses.log_loss(
+            self.input_is_real, self.discriminator_output)
 
     def samplers(self, examples, as_feed_dict=True):
         """
-        [[Float]] -> Bool?
-            -> (Sampler (Bool, [Float]), Sampler (Bool, [Float]))
+        [[Float]] -> Bool? -> (Sampler (Bool, [Float], [Float]),
+            Sampler (Bool, [Float], [Float]))
         Return two samplers; one for training on real inputs,
         and one for training on false inputs.
         """
+        def uniform_vector():
+            return np.random.uniform(-1., 1., size=[self.noise_dimension])
+        
+        # TODO: this could be sped up by just using zeros for noise
+        #       since it is not used anyway
         real_sampler = AnonymousSampler(
-            single=lambda: (True, choice(examples)))
+            single=lambda: (True, uniform_vector(), choice(examples)))
         fake_sampler = AnonymousSampler(
-            single=lambda: (False, choice(examples)))
+            single=lambda: (False, uniform_vector(), choice(examples)))
         
         if as_feed_dict:
             def to_feed_dict(s):
                 return FeedDictSampler(s, {
                     self.switch: lambda t: t[0],
-                    self.real_input: lambda t: t[1]
+                    self.noise_vector: lambda t: t[1],
+                    self.real_input: lambda t: t[2]
                 })
             real_sampler = to_feed_dict(real_sampler)
             fake_sampler = to_feed_dict(fake_sampler)
         
         return real_sampler, fake_sampler
+
+    def set_optimisers(self):
+        """
+        () -> ()
+        Using the generator and discriminator loss nodes saved
+        in the GAN object, create an optimiser for each network
+        and save it in the GAN object.
+        """
+        self.generator_optimiser = default_adam_optimiser(
+            self.generator_loss, self.extend_name('generator_optimiser'),
+            self.generator.get_variables())
+        self.discriminator_optimiser = default_adam_optimiser(
+            self.discriminator_loss,
+            self.extend_name('discriminator_optimiser'),
+            self.discriminator.get_variables())
+
+    def train(self, examples, epochs, steps_per_epoch, batch_size,
+            evaluation_sample_size=-1):
+        """
+        [[Float]] -> Int -> Int -> Int -> Int? -> ()
+        Train the GAN by alternating between training the
+        discriminator and then both networks on each step.
+        Default loss nodes, samplers, and optimisers are used.
+        Logging will be done if the evaluation sample size is
+        set to a strictly positive number.
+        """
+        real_sampler, fake_sampler = self.samplers(examples)
+        try:
+            for epoch in range(epochs):
+                if evaluation_sample_size > 0:
+                    real_disc_loss = self.feed(self.discriminator_loss,
+                        real_sampler.batch(evaluation_sample_size))
+                    fake_disc_loss, gen_loss = self.feed(
+                        [self.discriminator_loss, self.generator_loss],
+                        fake_sampler.batch(evaluation_sample_size)
+                    )
+                    disc_loss = 0.5 * (real_disc_loss + fake_disc_loss)
+                    print('Epoch: {}\tGenerator loss: {}\tDiscriminator Loss: {}'
+                        .format(epoch, gen_loss, disc_loss))
+                self._perform_epoch(real_sampler, fake_sampler,
+                    steps_per_epoch, batch_size)
+        except KeyboardInterrupt:
+            print('Training stopped early.')
+
+    def _perform_epoch(self, real_sampler, fake_sampler,
+            steps_per_epoch, batch_size):
+        """
+        Sampler -> Sampler -> Int -> Int -> ()
+        Perform an epoch of training with the given training
+        parameters.
+        """
+        for _ in range(steps_per_epoch):
+            self.feed(self.discriminator_optimiser,
+                real_sampler.batch(batch_size))
+            self.feed([self.discriminator_optimiser, self.generator_optimiser],
+                fake_sampler.batch(batch_size))
 
     @staticmethod
     def default_network(hidden_layer_shapes):
