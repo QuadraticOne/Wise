@@ -4,7 +4,9 @@ from wise.networks.activation import Activation
 from wise.training.samplers.anonymous import AnonymousSampler
 from wise.training.samplers.feeddict import FeedDictSampler
 from wise.util.tensors import placeholder_node
+from wise.util.training import default_adam_optimiser
 from random import choice
+import tensorflow as tf
 
 
 class GAN(Network):
@@ -43,6 +45,8 @@ class GAN(Network):
 
         self.generator = None
         self.discriminator = None
+
+        self._initialise()
 
     def _initialise(self):
         """
@@ -97,7 +101,7 @@ class GAN(Network):
             1., self.discriminator_output)
         return generator_loss, discriminator_loss
 
-    def sampler(self, examples, as_feed_dict=True):
+    def samplers(self, examples, as_feed_dict=True):
         """
         [[Float]] -> Bool?
             -> (Sampler (Bool, [Float]), Sampler (Bool, [Float]))
@@ -133,7 +137,7 @@ class GAN(Network):
             net = FeedforwardNetwork(
                 name=name,
                 session=session,
-                input_shape=[[input_dimension]],
+                input_shape=[input_dimension],
                 layer_shapes=hidden_layer_shapes + [[output_dimension]],
                 activations=Activation.all_except_last(
                     Activation.LEAKY_RELU, Activation.SIGMOID),
