@@ -123,11 +123,15 @@ class IO:
         to an image, represented as a ndarray.  Note that
         the file extension must be included.
         """
-        image = mpimg.imread(self._extend(path))
-        if len(image.shape) == 3:
-            return image[:, :, :3]
-        else:
-            return image
+        try:
+            image = mpimg.imread(self._extend(path))
+            if len(image.shape) == 3:
+                return image[:, :, :3]
+            else:
+                return image
+        except:
+            print('Failed to read image: "{}".'.format(path))
+            return None
 
     def all_files(self, sub_file_path='', include_sub_folders=False,
             remove_extensions=True):

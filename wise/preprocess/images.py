@@ -114,3 +114,23 @@ def squares_from_image(image_tensor, n_samples, output_size,
 
     dataset_from_image(image_tensor, n_samples, output_size,
         output_io, sub_image_size, name)
+
+
+def squares_from_folder(input_io, output_io, samples_per_image,
+        sub_image_size_range, output_shape, greyscale=False):
+    """
+    IO -> IO -> Int -> (Float, Float) -> (Int, Int) -> Bool? -> ()
+    Create a number of smaller images from each image in a
+    directory, where each subimage is chosen randomly and
+    squares are taken from it at random.
+    """
+    i = 0
+    for path in input_io.all_files(remove_extensions=False):
+        img = input_io.restore_image(path)
+        if img is None:
+            continue
+        if greyscale:
+            img = to_greyscale(img)
+        squares_from_image(img, samples_per_image, output_shape,
+            sub_image_size_range, output_io, str(i))
+        i += 1
