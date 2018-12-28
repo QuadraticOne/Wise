@@ -2,7 +2,9 @@ from os.path import isdir
 from os import makedirs, listdir
 from pickle import dump, load
 from json import dumps, loads
+from scipy.misc import imsave
 import tensorflow as tf
+import matplotlib.image as mpimg
 
 
 class IO:
@@ -106,6 +108,26 @@ class IO:
         with open(self._extend(path, '.json'), 'r') as f:
             obj = loads(f.read())
         return obj
+
+    def save_image(self, image_tensor, path):
+        """
+        numpy.ndarray -> String -> ()
+        Save the given image as a .png file.
+        """
+        imsave(self._extend(path, extension='.png'), image_tensor)
+
+    def restore_image(self, path):
+        """
+        String -> numpy.ndarray
+        Restore the image contained at the given location
+        to an image, represented as a ndarray.  Note that
+        the file extension must be included.
+        """
+        image = mpimg.imread(self._extend(path))
+        if len(image.shape) == 3:
+            return image[:, :, :3]
+        else:
+            return image
 
     def all_files(self, sub_file_path='', include_sub_folders=False,
             remove_extensions=True):

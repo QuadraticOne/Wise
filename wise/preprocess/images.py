@@ -10,7 +10,10 @@ def load_image(path):
     Load an image into a tensor form.
     """
     image = mpimg.imread(path)
-    return image[:, :, :3]
+    if len(image.shape) == 3:
+        return image[:, :, :3]
+    else:
+        return image
 
 
 def show_image(image_tensor, coloured=True):
