@@ -194,3 +194,49 @@ class Embedding(Network):
         [a] -> [[Float]]
         """
         return self.embeddings_by_index(self.indices_by_idem(items))
+
+
+class VariationalEmbedding(Embedding):
+    """
+    Describes an embedding whose values are sampled from a
+    Gaussian parameterised by a tensor of means and
+    standard deviations.
+    """
+    
+    def __init__(self, name, session, items, embedding_dimension,
+            discriminator_builder, truth_function,
+            activation=Activation.IDENTITY, save_location=None):
+        """
+        String -> tf.Session -> [object] -> Int
+            -> (String -> tf.Session -> Int -> tf.Node 
+                -> (Network, tf.Node, Int))
+            -> (a -> [Float]) -> (tf.Tensor -> String -> tf.Tensor)
+            -> String? -> Embedding
+        Create an embedding for the given list of items.  The discriminator
+        generator should be a function which, given a name, session, 
+        input dimension, and input node, returns a network as well
+        as the node from the network which should be used as its
+        output and the dimensionality of that output node (which must
+        be a vector).
+        """
+        Network.__init__(self, name, session, save_location)
+
+        self.items = items
+        self.n_items = len(items)
+        self.embedding_dimension = embedding_dimension
+        self.discriminator_builder = discriminator_builder
+        self.truth_function = truth_function
+        self.activation = activation
+
+        self.embeddings = None
+        self.indices_input = None
+        self.lookups = None
+        self.activated_lookups = None
+
+        self.discriminator = None
+        self.output_node = None
+        self.output_dimension = None
+
+        self.index_lookup = None
+
+        self._initialise()
