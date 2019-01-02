@@ -196,7 +196,7 @@ class Embedding(Network):
         return self.embeddings_by_index(self.indices_by_idem(items))
 
 
-class VariationalEmbedding(Embedding):
+class VariationalEmbedding(Network):
     """
     Describes an embedding whose values are sampled from a
     Gaussian parameterised by a tensor of means and
@@ -219,7 +219,7 @@ class VariationalEmbedding(Embedding):
         output and the dimensionality of that output node (which must
         be a vector).
         """
-        Network.__init__(self, name, session, save_location)
+        super().__init__(name, session, save_location)
 
         self.items = items
         self.n_items = len(items)
@@ -228,15 +228,63 @@ class VariationalEmbedding(Embedding):
         self.truth_function = truth_function
         self.activation = activation
 
-        self.embeddings = None
+        self.embedding_means = None
+        self.embedding_stddevs = None
         self.indices_input = None
-        self.lookups = None
-        self.activated_lookups = None
+        self.mean_lookups = None
+        self.stddev_lookups = None
+        self.variational_lookups = None
+        self.activated_means = None
+        self.activated_variational_lookups = None
 
         self.discriminator = None
+        self.variational_discriminator = None
         self.output_node = None
-        self.output_dimension = None
+        self.variational_output_node = None
 
+        self.output_dimension = None
         self.index_lookup = None
 
         self._initialise()
+
+    def _initialise(self):
+        """
+        () -> ()
+        """
+        self.embedding_means = glorot_initialised_vars(
+            self.extend_name('embedding_means'),
+            [self.n_items, self.embedding_dimension])
+        self.embedding_stddevs = glorot_initialised_vars(
+            self.extend_name('embedding_stddevs'),
+            [self.n_items, self.embedding_dimension])
+
+        self.indices_input = int_placeholder_node(self.extend_name(
+            'indices_input'), [], 1)
+
+        self.mean_lookups = tf.nn.embedding_lookup(self.embedding_means,
+            self.indices_input, name=self.extend_name('mean_lookups'))
+        self.stddev_lookups = tf.nn.embedding_lookup(self.embedding_stddevs,
+            self.indices_input, name=self.extend_name('stddev_lookups'))
+
+        self.variational_lookups = tf.add(self.mean_lookups,
+            tf.multiply(tf.random_normal([self.embedding_dimension]),
+            self.stddev_lookups), name=self.extend_name('variational_lookups'))
+        
+        self.activated_means = self.activation(self.mean_lookups,
+            self.extend_name('activated_means'))
+
+        self.activated_variational_lookups = self.activation(
+            self.variational_lookups, self.extend_name(
+                'activated_variational_lookups'))
+
+        self.discriminator, self.output_node, self.output_dimension = \
+            self.discriminator_builder(self.extend_name('discriminator'),
+                self.get_session(), self.embedding_dimension,
+                self.activated_means)
+
+        self.variational_discriminator, self.variational_output_node, _ = \
+            self.discriminator_builder(self.extend_name(
+                'variational_discriminator'), self.get_session(),
+                self.embedding_dimension, self.activated_variational_lookups)
+
+        self.index_lookup = self._invert_items(self.items)
