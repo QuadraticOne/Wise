@@ -288,3 +288,19 @@ class VariationalEmbedding(Network):
                 self.embedding_dimension, self.activated_variational_lookups)
 
         self.index_lookup = self._invert_items(self.items)
+
+    def embedding_by_index(self, n, sampled=False):
+        """
+        Int -> Bool? -> [Float]
+        """
+        node = self.activated_variational_lookups if sampled \
+            else self.activated_means
+        return self.feed(node, {self.indices_input: [n]})[0]
+
+    def embeddings_by_index(self, ns, sampled=False):
+        """
+        [Int] -> Bool? -> [[Float]]
+        """
+        node = self.activated_variational_lookups if sampled \
+            else self.activated_means
+        return self.feed(node, {self.indices_input: ns})
