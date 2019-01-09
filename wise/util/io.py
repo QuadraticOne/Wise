@@ -28,13 +28,13 @@ class IO:
         """
         () -> ()
         Throws exception if the file path is not valid.  A valid file path
-        has a forward slash at the end and contains no full stops.
+        has a forward slash at the end and does not point to a file.
         """
         ends_in_slash = self.file_path[-1] == '/'
-        contains_dot = '.' in self.file_path
+        _, file_name = self._split_file_from_path(self.file_path)
         if not ends_in_slash:
             raise ValueError('Invalid file path: should end in "/".')
-        if contains_dot:
+        if len(file_name) > 0:
             raise ValueError('Invalid file path: should not contain ".".')
 
     def _dir_exists(self, inner_dir=None):
