@@ -114,7 +114,9 @@ class IO:
         numpy.ndarray -> String -> ()
         Save the given image as a .png file.
         """
-        imsave(self._extend(path, extension='.png'), image_tensor)
+        _path = self._remove_file_extension(path)
+        self._create_dirs_for_path(_path)
+        imsave(self._extend(_path, extension='.png'), image_tensor)
 
     def restore_image(self, path):
         """
@@ -165,6 +167,17 @@ class IO:
         String -> String
         """
         return '/'.join(path.split('/')[:-1])
+
+    def _split_file_from_path(self, path):
+        """
+        String -> (String, String)
+        Split the file name from the path and return them both.
+        If there is no file name, the file will be returned as
+        an empty string.  Includes the file extension if there
+        is one.
+        """
+        segments = path.split('/')
+        return '/'.join(segments[:-1]) + '/', segments[-1]
 
     def _remove_file_extension(self, path):
         """
