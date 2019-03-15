@@ -29,13 +29,11 @@ def fit(
                 batch_size,
             )
             if log:
-                metric_results = (
-                    session.run(
-                        [node for _, node in metrics],
-                        feed_dict=sampler.batch(evaluation_sample_size),
-                    )
+                metric_results = session.run(
+                    [node for _, node in metrics],
+                    feed_dict=sampler.batch(evaluation_sample_size)
                     if sampler is not None
-                    else None
+                    else None,
                 )
                 name_results = [
                     (name, result) for (name, _), result in zip(metrics, metric_results)
