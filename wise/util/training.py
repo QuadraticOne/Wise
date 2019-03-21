@@ -17,15 +17,19 @@ def regression_metrics(output_node_shape, output_node, name, variables=None):
     return target_node, loss_node, optimiser
 
 
-def classification_metrics(output_node_shape, output_node, name, variables=None):
+def classification_metrics(
+    output_node_shape, output_node, name, variables=None, target=None
+):
     """
     [Int] -> tf.Tensor -> String -> [tf.Variable]? ->
         (TargetNode, LossNode, Accuracy, Optimiser)
     Create metrics - target node, loss node, accuracy node, and optimiser -
     for a classification model.
     """
-    target_node = placeholder_node(
-        name + ".target", output_node_shape, dynamic_dimensions=1
+    target_node = (
+        placeholder_node(name + ".target", output_node_shape, dynamic_dimensions=1)
+        if target is None
+        else target
     )
     loss_node = tf.losses.log_loss(target_node, output_node)
     accuracy_node = accuracy(output_node, target_node, name + ".accuracy")
