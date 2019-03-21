@@ -9,8 +9,9 @@ def regression_metrics(output_node_shape, output_node, name, variables=None):
     Create metrics - target node, loss node, and optimiser - for a
     regression model.
     """
-    target_node = placeholder_node(name + '.target', output_node_shape,
-        dynamic_dimensions=1)
+    target_node = placeholder_node(
+        name + ".target", output_node_shape, dynamic_dimensions=1
+    )
     loss_node = tf.losses.mean_squared_error(target_node, output_node)
     optimiser = default_adam_optimiser(loss_node, name, variables=variables)
     return target_node, loss_node, optimiser
@@ -23,16 +24,25 @@ def classification_metrics(output_node_shape, output_node, name, variables=None)
     Create metrics - target node, loss node, accuracy node, and optimiser -
     for a classification model.
     """
-    target_node = placeholder_node(name + '.target', output_node_shape,
-        dynamic_dimensions=1)
+    target_node = placeholder_node(
+        name + ".target", output_node_shape, dynamic_dimensions=1
+    )
     loss_node = tf.losses.log_loss(target_node, output_node)
-    accuracy_node = accuracy(output_node, target_node, name + '.accuracy')
+    accuracy_node = accuracy(output_node, target_node, name + ".accuracy")
     optimiser = default_adam_optimiser(loss_node, name, variables=variables)
     return target_node, loss_node, accuracy_node, optimiser
 
 
-def beta_variational_metrics(input_node, reconstruction_node, means_node,
-        stddevs_node, name, beta=1.0, variables=None, eps=1e-7):
+def beta_variational_metrics(
+    input_node,
+    reconstruction_node,
+    means_node,
+    stddevs_node,
+    name,
+    beta=1.0,
+    variables=None,
+    eps=1e-7,
+):
     """
     tf.Tensor -> tf.Tensor -> tf.Tensor -> tf.Tensor -> String -> Float? ->
         [tf.Variable]? -> Float? -> (LossNode, LossNode, LossNode, Optimiser)
@@ -40,13 +50,19 @@ def beta_variational_metrics(input_node, reconstruction_node, means_node,
     and composite) and an adam optimiser for a variational inference
     model. 
     """
-    reconstruction_loss, _ = reconstruction_metrics(input_node,
-        reconstruction_node, name + '.reconstruction_optimiser', variables=variables)
-    kl_loss, _ = variational_metrics(means_node, stddevs_node,
-        name + '.variational_optimiser', variables=variables)
+    reconstruction_loss, _ = reconstruction_metrics(
+        input_node,
+        reconstruction_node,
+        name + ".reconstruction_optimiser",
+        variables=variables,
+    )
+    kl_loss, _ = variational_metrics(
+        means_node, stddevs_node, name + ".variational_optimiser", variables=variables
+    )
     composite_loss = reconstruction_loss + beta * kl_loss
-    optimiser = default_adam_optimiser(composite_loss, name + '.composite_optimiser',
-        variables=variables)
+    optimiser = default_adam_optimiser(
+        composite_loss, name + ".composite_optimiser", variables=variables
+    )
     return reconstruction_loss, kl_loss, composite_loss, optimiser
 
 
@@ -70,10 +86,16 @@ def variational_metrics(means_node, stddevs_node, name, variables=None, eps=1e-7
     by the mean and standard deviation nodes provided.  Measures the KL-divergence
     from a standard Gaussian.
     """
-    loss_node = tf.reduce_mean(0.5 * tf.reduce_mean(
-        tf.square(means_node) + tf.square(stddevs_node) - 
-            tf.log(tf.square(stddevs_node) + eps) - 1,1
-    ))
+    loss_node = tf.reduce_mean(
+        0.5
+        * tf.reduce_mean(
+            tf.square(means_node)
+            + tf.square(stddevs_node)
+            - tf.log(tf.square(stddevs_node) + eps)
+            - 1,
+            1,
+        )
+    )
     optimiser = default_adam_optimiser(loss_node, name, variables=variables)
     return loss_node, optimiser
 
@@ -84,8 +106,9 @@ def default_adam_optimiser(loss_node, name, variables=None):
     Create an adam optimiser with default learning parameters set to minimise
     the given loss node.
     """
-    return tf.train.AdamOptimizer(name=name + '.adam_optimiser') \
-        .minimize(loss_node, var_list=variables, name=name + '.minimise')
+    return tf.train.AdamOptimizer(name=name + ".adam_optimiser").minimize(
+        loss_node, var_list=variables, name=name + ".minimise"
+    )
 
 
 def accuracy(prediction_node, target_node, name):
