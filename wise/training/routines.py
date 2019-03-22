@@ -38,7 +38,7 @@ def fit(
                 name_results = [
                     (name, result) for (name, _), result in zip(metrics, metric_results)
                 ]
-                name_results.insert(0, ("Epoch", epoch))
+                name_results.insert(0, ("Epoch", epoch + 1))
                 print(
                     "\t".join(
                         ["{}: {}".format(name, result) for name, result in name_results]
@@ -48,7 +48,7 @@ def fit(
         if log:
             print(
                 "Training finished early ({}/{} epochs, {}%).".format(
-                    epoch, epochs, str(100 * (epoch / epochs))[:4]
+                    epoch + 1, epochs, str(100 * ((epoch + 1) / epochs))[:4]
                 )
             )
 
