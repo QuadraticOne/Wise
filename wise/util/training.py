@@ -17,7 +17,7 @@ def regression_metrics(output_node_shape, output_node, name, variables=None):
     return target_node, loss_node, optimiser
 
 
-def classification_metrics(
+def classification_metrics_with_initialiser(
     output_node_shape, output_node, name, variables=None, target=None
 ):
     """
@@ -33,8 +33,25 @@ def classification_metrics(
     )
     loss_node = tf.losses.log_loss(target_node, output_node)
     accuracy_node = accuracy(output_node, target_node, name + ".accuracy")
-    optimiser = default_adam_optimiser(loss_node, name, variables=variables)
-    return target_node, loss_node, accuracy_node, optimiser
+    optimiser, initialiser = default_adam_optimiser_with_initialiser(
+        loss_node, name, variables=variables
+    )
+    return target_node, loss_node, accuracy_node, optimiser, initialiser
+
+
+def classification_metrics(
+    output_node_shape, output_node, name, variables=None, target=None
+):
+    """
+    [Int] -> tf.Tensor -> String -> [tf.Variable]? ->
+        (TargetNode, LossNode, Accuracy, Optimiser)
+    Create metrics - target node, loss node, accuracy node, and optimiser -
+    for a classification model.
+    """
+    t, l, a, o, _ = classification_metrics_with_initialiser(
+        output_node_shape, output_node, name, variables=variables, target=target
+    )
+    return t, l, a, o
 
 
 def beta_variational_metrics(
@@ -104,10 +121,23 @@ def variational_metrics(means_node, stddevs_node, name, variables=None, eps=1e-7
     return loss_node, optimiser
 
 
+def default_adam_optimiser_with_initialiser(loss_node, name, variables=None):
+    """
+    tf.Node -> String -> [tf.Variable]? -> (tf.Op, tf.Op)
+    Create an Adam optimiser operation, along with an operation for initialising
+    only the variables used internally by the optimiser.
+    """
+    optimiser = tf.train.AdamOptimizer(name=name + ".adam_optimiser")
+    return (
+        optimiser.minimize(loss_node, var_list=variables, name=name + ".minimise"),
+        tf.variables_initializer(optimiser.variables()),
+    )
+
+
 def default_adam_optimiser(loss_node, name, variables=None):
     """
-    LossNode -> String -> Optimiser
-    Create an adam optimiser with default learning parameters set to minimise
+    LossNode -> String -> [tf.Variable]? -> Optimiser
+    Create an Adam optimiser with default learning parameters set to minimise
     the given loss node.
     """
     return tf.train.AdamOptimizer(name=name + ".adam_optimiser").minimize(
