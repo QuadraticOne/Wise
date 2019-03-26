@@ -41,7 +41,14 @@ def fit(
                 name_results.insert(0, ("Epoch", epoch + 1))
                 print(
                     "\t".join(
-                        ["{}: {}".format(name, result) for name, result in name_results]
+                        [
+                            (
+                                "{}: {:+.5e}"
+                                if not isinstance(result, int)
+                                else "{}: {:<4d}"
+                            ).format(name, result)
+                            for name, result in name_results
+                        ]
                     )
                 )
     except KeyboardInterrupt:
