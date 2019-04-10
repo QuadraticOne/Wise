@@ -20,7 +20,7 @@ def fit(
     containing the value of each metric at each step.
     """
     data = []
-    log = metrics is not None
+    log = len(metrics) > 0 if metrics is not None else False
     try:
         for epoch in range(epochs):
             perform_epoch(
@@ -30,20 +30,20 @@ def fit(
                 ceil(steps_per_epoch / batch_size),
                 batch_size,
             )
-            metric_results = session.run(
-                [node for _, node in metrics],
-                feed_dict=sampler.batch(evaluation_sample_size)
-                if sampler is not None
-                else None,
-            )
-
-            data.append({"Epoch": epoch + 1})
-            name_results = [("Epoch", epoch + 1)]
-            for (name, _), result in zip(metrics, metric_results):
-                data[-1][name] = result
-                name_results.append((name, result))
-
             if log:
+                metric_results = session.run(
+                    [node for _, node in metrics],
+                    feed_dict=sampler.batch(evaluation_sample_size)
+                    if sampler is not None
+                    else None,
+                )
+
+                data.append({"Epoch": epoch + 1})
+                name_results = [("Epoch", epoch + 1)]
+                for (name, _), result in zip(metrics, metric_results):
+                    data[-1][name] = result
+                    name_results.append((name, result))
+
                 print(
                     "\t".join(
                         [
