@@ -39,9 +39,9 @@ def fit(
 
             data.append({"Epoch": epoch + 1})
             name_results = [("Epoch", epoch + 1)]
-            for name, result in (name, _), result in zip(metrics, metric_results):
+            for (name, _), result in zip(metrics, metric_results):
                 data[-1][name] = result
-                name_results.append(name, result)
+                name_results.append((name, result))
 
             if log:
                 print(
